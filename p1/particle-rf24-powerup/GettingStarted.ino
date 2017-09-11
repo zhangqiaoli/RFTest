@@ -131,7 +131,7 @@ int ChangeRole(String data) {
 }
 
 void setup() {
-  WiFi.off();
+  //WiFi.off();
   Serial.begin(9600);
   Serial.println(F("Particle-RF24/Firmware/Examples/GettingStarted"));
 
