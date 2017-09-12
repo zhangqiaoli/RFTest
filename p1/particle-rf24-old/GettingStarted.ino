@@ -47,7 +47,7 @@ RF24 radio(A0,A2);
 
 //byte pipes[][6] = {"1Node","2Node"};
 // Radio pipe addresses for the 2 nodes to communicate.
-const uint64_t pipes[2] = { 0xF0F0F0F071LL, 0xF0F0F0F072LL };
+const uint64_t pipes[2] = { 0xF0F0F0F001LL, 0xF0F0F0F002LL };
 
 // The various roles supported by this sketch
 typedef enum { role_idle = 0, role_ping_out, role_pong_back } role_e;
