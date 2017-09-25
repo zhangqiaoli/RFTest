@@ -144,11 +144,11 @@ void UpdateNodeAddress(void) {
   memcpy(rx_addr, gConfig.NetworkID, ADDRESS_WIDTH);
   memcpy(tx_addr, gConfig.NetworkID, ADDRESS_WIDTH);
   if( gConfig.nodeID == 'r' ) {
-    rx_addr[0] = 0x01;
-    tx_addr[0] = 0x02;
+    rx_addr[0] = 0x71;
+    tx_addr[0] = 0x72;
   } else {
-    rx_addr[0] = 0x02;
-    tx_addr[0] = 0x01;
+    rx_addr[0] = 0x72;
+    tx_addr[0] = 0x71;
   }
   RF24L01_setup(RF24_CHANNEL, 0);
   if( gConfig.nodeID == 'r' ) {
@@ -184,9 +184,9 @@ return ((n & 0xff) << 24) |
 } 
 
 uint8_t sendData[33] = {0};
-unsigned char sendMsg[33] = "now-i-am-sending-data-of-num-000";
+unsigned char sendMsg[33] = "dev-i-am-sending-data-of-num-000";
 unsigned char recvMsg[33] = {0};
-unsigned char respMsg[33] = "ok--now-i-am-responsing-data-000";
+unsigned char respMsg[33] = "dev--ok-i-am-responsing-data-000";
 uint8_t times = 0;
 uint16_t succ = 0;
 uint16_t fail = 0;

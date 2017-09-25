@@ -47,8 +47,7 @@ RF24 radio(A0,A2);
 
 //byte pipes[][6] = {"1Node","2Node"};
 // Radio pipe addresses for the 2 nodes to communicate.
-//const uint64_t pipes[2] = { 0xF0F0F0F071LL, 0xF0F0F0F072LL };
-const uint64_t pipes[2] = { 0xF0F0F0F001LL, 0xF0F0F0F002LL };
+const uint64_t pipes[2] = { 0xF0F0F0F0BBLL, 0xF0F0F0F0B2LL };
 
 // The various roles supported by this sketch
 typedef enum { role_idle = 0, role_ping_out, role_pong_back } role_e;
@@ -80,6 +79,16 @@ struct node
 node hisdata[data_len];
 uint8_t write_ptr = 0;
 unsigned long starttime = millis();
+
+char sendmsg[33] = "now-i-am-sending-data-of-num-000";
+char recvmsg[33] = {0};
+char respmsg[33] = "ok--now-i-am-responsing-data-000";
+uint8_t times = 0;
+uint16_t succ = 0;
+uint16_t fail = 0;
+uint16_t recv = 0;
+uint16_t sendtimes = 0;
+#define PLAYLOAD_LEN 32
 
 int ChangeRole(String data) {
   data.toUpperCase();
@@ -117,6 +126,12 @@ int ChangeRole(String data) {
   {
     if(role == role_ping_out)
     {
+      unsigned long now = millis();
+      hisdata[write_ptr].usetime = now - starttime;
+      hisdata[write_ptr].total = sendtimes;
+      hisdata[write_ptr].succ = succ;
+      hisdata[write_ptr].fail = fail;
+      hisdata[write_ptr].recvres = recv;
       Serial.println("***************show history data*************");
       for(int8_t i = 0;i<data_len;i++)
       {
@@ -131,7 +146,7 @@ int ChangeRole(String data) {
 }
 
 void setup() {
-  WiFi.off();
+  //WiFi.off();
   Serial.begin(9600);
   Serial.println(F("Particle-RF24/Firmware/Examples/GettingStarted"));
 
@@ -184,15 +199,7 @@ void setup() {
     debug("**PRESS 'T' to begin transmitting to the other node");
   }
 }
-char sendmsg[33] = "now-i-am-sending-data-of-num-000";
-char recvmsg[33] = {0};
-char respmsg[33] = "ok--now-i-am-responsing-data-000";
-uint8_t times = 0;
-uint16_t succ = 0;
-uint16_t fail = 0;
-uint16_t recv = 0;
-uint16_t sendtimes = 0;
-#define PLAYLOAD_LEN 32
+
 
 void loop()
 {
@@ -322,8 +329,7 @@ void loop()
     } else if ( c == 'F' ) {
       Serial.printlnf("System enter dfu");
       System.dfu();
-    }
-    else if ( (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ) {
+    }else if ( (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ) {
       Serial.println("------- Help -----------");
       Serial.println("Change role: 'T'-Transmitor, 'R'-Receiver, 'Q'-Idle");
       Serial.println("Show info: 'C'-Check RF module, 'P'-Print RF Detail, 'V'-Version");
