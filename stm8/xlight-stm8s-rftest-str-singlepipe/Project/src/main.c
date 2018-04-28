@@ -51,7 +51,38 @@ Connections:
 #define SYS_WAIT_PRESENTED              3
 #define SYS_RUNNING                     5
 
-const UC RF24_BASE_RADIO_ID[ADDRESS_WIDTH] = {0x00,0xF0,0xF0,0xF0,0xF0};
+////////////////config///////////////////////
+uint8_t receiver = 1;
+//const UC RF24_BASE_RADIO_ID[ADDRESS_WIDTH] = {0x00,0xF0,0xF0,0xF0,0xF0};
+const UC RF24_BASE_RADIO_ID[ADDRESS_WIDTH] = {0xBA,0xF0,0xF0,0xF0,0xF0};
+
+uint8_t sendData[33] = {0};
+unsigned char sendMsg[33] = "dev-i-am-sending-data-of-num-000";
+unsigned char recvMsg[33] = {0};
+unsigned char respMsg[33] = "ok--dev-i-am-responsing-data-000";
+uint8_t times = 0;
+uint16_t succ = 0;
+uint16_t fail = 0;
+uint16_t recv = 0;
+uint16_t sendtimes = 0;
+int32_t lastRecvNum = -1;
+
+#define DATA_LEN 25
+#define SEND_INTERVAL 1000
+
+typedef struct tagnode
+{
+  uint16_t total;
+  uint16_t succ;
+  uint16_t fail;
+  uint16_t recvres;
+}node;
+
+node hisdata[DATA_LEN];
+uint8_t write_ptr = 0;
+
+///////////////config////////////////////////
+
 
 // Public variables
 Config_t gConfig;
@@ -183,29 +214,17 @@ return ((n & 0xff) << 24) |
 ((n & 0xff000000) >> 24); 
 } 
 
-uint8_t sendData[33] = {0};
-unsigned char sendMsg[33] = "dev-i-am-sending-data-of-num-000";
-unsigned char recvMsg[33] = {0};
-unsigned char respMsg[33] = "dev--ok-i-am-responsing-data-000";
-uint8_t times = 0;
-uint16_t succ = 0;
-uint16_t fail = 0;
-uint16_t recv = 0;
-uint16_t sendtimes = 0;
-
-#define DATA_LEN 5
-#define SEND_INTERVAL 100
-
-typedef struct tagnode
+int atoi(char *str)
 {
-  uint16_t total;
-  uint16_t succ;
-  uint16_t fail;
-  uint16_t recvres;
-}node;
-
-node hisdata[DATA_LEN];
-uint8_t write_ptr = 0;
+        int value = 0;
+        while(*str>='0' && *str<='9')
+        {
+                value *= 10;
+                value += *str - '0';
+                str++;
+        }
+        return value;
+}
 
 // Send message and switch back to receive mode
 bool SendMyMessage() {
@@ -312,12 +331,21 @@ INTERRUPT_HANDLER(EXTI_PORTC_IRQHandler, 5) {
     memset(recvMsg,0,sizeof(recvMsg));
     RF24L01_read_payload(recvMsg, PLOAD_WIDTH);
     memset(sLog, 0x00, sizeof(sLog));
-    sprintf(sLog, "Rece data: %s\n\r", recvMsg);
+    uint16_t recvnum = atoi(&recvMsg[29]);
+    sprintf(sLog, "Rece data: %d\n\r", recvnum);
     Uart2SendString(sLog);
     if( gConfig.nodeID == 'r' )
     {
-      unsigned char got_time = recvMsg[31];
-      respMsg[31]=got_time;
+      if(lastRecvNum != -1)
+      {
+        if(recvnum == 0 || recvnum < lastRecvNum)
+        {
+          write_ptr = write_ptr%DATA_LEN+1;
+        }
+      }
+      lastRecvNum = recvnum;
+      hisdata[write_ptr].recvres++;      
+      sprintf(respMsg,"%dok-now-i-am-responsing-data-%03d",receiver,recvnum);
       memcpy(sendData,respMsg,PLOAD_WIDTH);
       bMsgReady = 1;
     }else if(gConfig.nodeID == 't')
@@ -359,14 +387,20 @@ INTERRUPT_HANDLER(UART2_RX_IRQHandler, 21)
       sprintf(sConsole, "*** CHANGING TO RECEIVE ROLE -- PRESS 'T' TO SWITCH BACK\n\r");
       Uart2SendString(sConsole);
     } else if( data == 'd' || data == 'D' ) {
-      if( times > 0 ) {
         memset(sConsole, 0x00, sizeof(sConsole));
-        for(int8_t i = 0;i<DATA_LEN;i++)
+        /*for(int8_t i = 0;i<DATA_LEN;i++)
         {
           sprintf(sConsole, "Succ sent total=%d,succ=%d,fail=%d,recvres=%d,failper: %.2f%%, recvresper: %.2f%%\n\r", hisdata[i].total, hisdata[i].succ, hisdata[i].fail, hisdata[i].recvres,(float)hisdata[i].fail*100/hisdata[i].total,(float)hisdata[i].recvres*100/hisdata[i].total);
           Uart2SendString(sConsole);
-        }
-      }       
+        }*/
+        Uart2SendString("***************show history data*************");
+        for(int8_t i = 0;i<DATA_LEN;i++)
+        {
+          if(write_ptr == i)
+            Uart2SendString("\r\n");
+          sprintf(sConsole,"recv = %d,recvper = %.2f%%\n\r",hisdata[i].recvres,(float)hisdata[i].recvres*100/SEND_INTERVAL);
+          Uart2SendString(sConsole);
+        }      
     } else if( data == 'p' || data == 'P' ) {
       RF24L01_show_registers();
     } else {
