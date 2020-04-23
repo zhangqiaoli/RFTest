@@ -53,8 +53,9 @@ Connections:
 
 ////////////////config///////////////////////
 uint8_t receiver = 1;
-//const UC RF24_BASE_RADIO_ID[ADDRESS_WIDTH] = {0x00,0xF0,0xF0,0xF0,0xF0};
-const UC RF24_BASE_RADIO_ID[ADDRESS_WIDTH] = {0xBA,0xF0,0xF0,0xF0,0xF0};
+#define RECV_ADDR 0x01
+#define SEND_ADDR 0x02
+const UC RF24_BASE_RADIO_ID[ADDRESS_WIDTH] = {0x01,0xF0,0xF0,0xF0,0xF0};
 
 uint8_t sendData[33] = {0};
 unsigned char sendMsg[33] = "dev-i-am-sending-data-of-num-000";
@@ -175,11 +176,11 @@ void UpdateNodeAddress(void) {
   memcpy(rx_addr, gConfig.NetworkID, ADDRESS_WIDTH);
   memcpy(tx_addr, gConfig.NetworkID, ADDRESS_WIDTH);
   if( gConfig.nodeID == 'r' ) {
-    rx_addr[0] = 0x71;
-    tx_addr[0] = 0x72;
+    rx_addr[0] = RECV_ADDR;
+    tx_addr[0] = SEND_ADDR;
   } else {
-    rx_addr[0] = 0x72;
-    tx_addr[0] = 0x71;
+    rx_addr[0] = SEND_ADDR;
+    tx_addr[0] = RECV_ADDR;
   }
   RF24L01_setup(RF24_CHANNEL, 0);
   if( gConfig.nodeID == 'r' ) {
